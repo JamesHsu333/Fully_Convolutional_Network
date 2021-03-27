@@ -19,6 +19,8 @@ parser.add_argument('--data_dir', default='data/JPEGImages',
                     help="Directory containing the dataset")
 parser.add_argument('--mask_dir', default='data/SegmentationClass',
                     help="Directory containing the mask dataset")
+parser.add_argument('--dataset_dir', default='data/',
+                    help="Directory containing the train/val/test file names")
 parser.add_argument('--model_dir', default='experiments/base_model',
                     help="Directory containing params.json")
 parser.add_argument('--restore_file', default=None,
@@ -91,20 +93,18 @@ def train_and_evaluate(model, train_dataloader, val_dataloader, optimizer, loss_
         # compute number of batches in one epoch (one full pass over the training set)
         train(model, optimizer, loss_fn, train_dataloader, metrics, params)
 
-        # Save weights
-        utils.save_checkpoint({'epoch': epoch + 1,
-                               'state_dict': model.state_dict(),
-                               'optim_dict': optimizer.state_dict()},
-                              is_best=True,
-                              checkpoint=model_dir)
-
         # Evaluate for one epoch on validation set
         val_metrics = evaluate(model, loss_fn, val_dataloader, metrics, params)
 
         val_acc = val_metrics['mIOU']
         is_best = val_acc >= best_val_acc
 
-        
+        # Save weights
+        utils.save_checkpoint({'epoch': epoch + 1,
+                               'state_dict': model.state_dict(),
+                               'optim_dict': optimizer.state_dict()},
+                              is_best=is_best,
+                              checkpoint=model_dir)
 
         # If best_eval, best_save_path
         if is_best:
@@ -138,7 +138,7 @@ if __name__ == '__main__':
 
     logging.info("Loading the datasets...")
 
-    dataloader = data_loader.fetch_dataloader(['train', 'val'], args.data_dir, args.mask_dir, params)
+    dataloader = data_loader.fetch_dataloader(['train', 'val'], args.data_dir, args.mask_dir, args.dataset_dir, params)
 
     train_dl = dataloader['train']
     val_dl = dataloader['val']

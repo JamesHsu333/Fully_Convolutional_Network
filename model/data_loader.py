@@ -24,11 +24,16 @@ eval_transformer = transforms.Compose([
 ])
 
 class GetDataset(Dataset):
-    def __init__(self, data_dir, mask_dir, transform, mask_transform):
+    def __init__(self, data_dir, mask_dir, dataset_type, transform, mask_transform):
         self.data_dir = data_dir
         self.mask_dir = mask_dir
+        self.dataset_type =dataset_type
+        self.dataset = []
+        with open(self.dataset_type, 'r') as f:
+            for line in f.readlines():
+                self.dataset.append('{}.png'.format(line.strip()))
         self.mask_filenames = os.listdir(mask_dir)
-        self.mask_filenames = [os.path.join(mask_dir, f) for f in self.mask_filenames if f.endswith('.png')]
+        self.mask_filenames = [os.path.join(mask_dir, f) for f in self.dataset]
         self.transform = transform
         self.mask_transform = mask_transform
 
@@ -47,20 +52,21 @@ class GetDataset(Dataset):
         mask = torch.from_numpy(mask)
         return image, mask
 
-def fetch_dataloader(types, data_dir, mask_dir, params):
+def fetch_dataloader(types, data_dir, mask_dir, dataset_dir, params):
     dataloaders={}
 
     for split in ['train', 'val', 'test']:
         if split in types:
             path = os.path.join(data_dir)
             mask_path = os.path.join(mask_dir)
+            dataset_type = os.path.join(dataset_dir, "{}.txt".format(split))
 
             if split == 'train':
-                dl = DataLoader(GetDataset(path, mask_path, train_transformer, mask_transformer), batch_size=params.batch_size, shuffle=True,
+                dl = DataLoader(GetDataset(path, mask_path, dataset_type, train_transformer, mask_transformer), batch_size=params.batch_size, shuffle=True,
                                             num_workers=params.num_workers,
                                             pin_memory=params.cuda)
             else:
-                dl = DataLoader(GetDataset(path, mask_path, eval_transformer, mask_transformer), batch_size=params.batch_size, shuffle=True,
+                dl = DataLoader(GetDataset(path, mask_path, dataset_type, eval_transformer, mask_transformer), batch_size=params.batch_size, shuffle=True,
                                             num_workers=params.num_workers,
                                             pin_memory=params.cuda)
             dataloaders[split] = dl

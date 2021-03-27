@@ -19,6 +19,8 @@ parser.add_argument('--data_dir', default='data/JPEGImages',
                     help="Directory containing the dataset")
 parser.add_argument('--mask_dir', default='data/SegmentationClass',
                     help="Directory containing the mask dataset")
+parser.add_argument('--dataset_dir', default='data/',
+                    help="Directory containing the train/val/test file names")
 parser.add_argument('--model_dir', default='experiments/base_model',
                     help="Directory containing params.json")
 parser.add_argument('--restore_file', default='best', help="name of the file in --model_dir \
@@ -120,7 +122,8 @@ if __name__ == '__main__':
 
     params.cuda = torch.cuda.is_available()
 
-    params.batch_size = 5
+    if args.show_images != 'no':
+        params.batch_size = 5
 
     torch.manual_seed(230)
     if params.cuda:
@@ -130,7 +133,7 @@ if __name__ == '__main__':
 
     logging.info("Creating the dataset...")
 
-    dataloader = data_loader.fetch_dataloader(['test'], args.data_dir, args.mask_dir, params)
+    dataloader = data_loader.fetch_dataloader(['test'], args.data_dir, args.mask_dir, args.dataset_dir ,params)
 
     test_dl = dataloader['test']
 
@@ -148,10 +151,8 @@ if __name__ == '__main__':
         args.model_dir, args.restore_file + '.pth.tar'), model)
 
     # Evaluate
-    evaluate(model, loss_fn, test_dl, metrics, params)
-
-    logging.info("- done.")
     test_metrics = evaluate(model, loss_fn, test_dl, metrics, params)
     save_path = os.path.join(
         args.model_dir, "metrics_test_{}.json".format(args.restore_file))
     utils.save_dict_to_json(test_metrics, save_path)
+    logging.info("- done.")

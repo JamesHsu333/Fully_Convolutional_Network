@@ -1,6 +1,10 @@
 __pycache__
 */__pycache__
-data/*
+data/JPEGImages
+data/SegmentationClass
 experiments/learning_rate
 *.tar
 *.log
+!.gitkeep
+*.json
+!params.json
